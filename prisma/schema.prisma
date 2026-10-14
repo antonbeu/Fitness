@@ -1,0 +1,227 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// -------------------- Auth --------------------
+// No public self-registration: accounts are created via prisma/create-user.ts.
+// Credentials-based Auth.js with JWT sessions, so no Account/Session/VerificationToken tables needed.
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  workouts          Workout[]
+  workoutSessions   WorkoutSession[]
+  mealEntries       MealEntry[]
+  customFoods       Food[]             @relation("FoodCreatedBy")
+  customExercises   Exercise[]         @relation("ExerciseCreatedBy")
+  favoriteExercises FavoriteExercise[]
+}
+
+// -------------------- Training: catalog + taxonomy --------------------
+
+enum BodyRegion {
+  FRONT
+  BACK
+}
+
+enum MuscleRole {
+  PRIMARY
+  SECONDARY
+}
+
+model MuscleGroup {
+  id         String     @id @default(cuid())
+  slug       String     @unique // matches the clickable region id in the SVG body map
+  name       String
+  bodyRegion BodyRegion
+
+  exercises ExerciseMuscleGroup[]
+}
+
+model Exercise {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  equipment       String?
+  category        String?
+  instructions    String?
+  videoUrl        String?
+  images          String[] @default([]) // relative paths; resolved against an external base URL (see lib/training/exercise-images.ts)
+  source          String   @default("seed") // "seed" | "import" | "custom"
+  createdByUserId String?
+  createdAt       DateTime @default(now())
+
+  createdBy        User?                 @relation("ExerciseCreatedBy", fields: [createdByUserId], references: [id])
+  muscleGroups     ExerciseMuscleGroup[]
+  workoutExercises WorkoutExercise[]
+  sessionExercises SessionExercise[]
+  favoritedBy      FavoriteExercise[]
+
+  @@index([createdByUserId])
+}
+
+model FavoriteExercise {
+  id         String   @id @default(cuid())
+  userId     String
+  exerciseId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, exerciseId])
+  @@index([exerciseId])
+}
+
+model ExerciseMuscleGroup {
+  exerciseId    String
+  muscleGroupId String
+  role          MuscleRole
+
+  exercise    Exercise    @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  muscleGroup MuscleGroup @relation(fields: [muscleGroupId], references: [id], onDelete: Cascade)
+
+  @@id([exerciseId, muscleGroupId])
+  @@index([muscleGroupId])
+}
+
+// -------------------- Training: workout templates + logged sessions --------------------
+
+model Workout {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercises WorkoutExercise[]
+  sessions  WorkoutSession[]
+
+  @@index([userId])
+}
+
+model WorkoutExercise {
+  id           String  @id @default(cuid())
+  workoutId    String
+  exerciseId   String
+  order        Int
+  targetSets   Int?
+  targetReps   Int?
+  targetWeight Float?
+  restSeconds  Int?
+  notes        String?
+
+  workout  Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@index([workoutId])
+  @@index([exerciseId])
+}
+
+model WorkoutSession {
+  id        String    @id @default(cuid())
+  userId    String
+  workoutId String? // nullable: allows ad-hoc sessions not started from a template
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  notes     String?
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workout   Workout?          @relation(fields: [workoutId], references: [id], onDelete: SetNull)
+  exercises SessionExercise[]
+
+  @@index([userId, startedAt])
+}
+
+model SessionExercise {
+  id               String  @id @default(cuid())
+  workoutSessionId String
+  exerciseId       String
+  order            Int
+  notes            String?
+
+  session  WorkoutSession @relation(fields: [workoutSessionId], references: [id], onDelete: Cascade)
+  exercise Exercise       @relation(fields: [exerciseId], references: [id])
+  sets     SetLog[]
+
+  @@index([workoutSessionId])
+}
+
+model SetLog {
+  id                String   @id @default(cuid())
+  sessionExerciseId String
+  setNumber         Int
+  weight            Float?
+  reps              Int?
+  unit              String   @default("kg") // "kg" | "lb"
+  rpe               Float?
+  completedAt       DateTime @default(now())
+
+  sessionExercise SessionExercise @relation(fields: [sessionExerciseId], references: [id], onDelete: Cascade)
+
+  @@index([sessionExerciseId])
+}
+
+// -------------------- Nutrition --------------------
+
+model Food {
+  id              String   @id @default(cuid())
+  source          String // "OFF" | "CUSTOM"
+  externalId      String? // Open Food Facts barcode; null for custom foods
+  name            String
+  brand           String?
+  servingSize     Float?
+  servingUnit     String?
+  caloriesPer100  Float
+  proteinPer100   Float
+  carbsPer100     Float
+  fatPer100       Float
+  nutrients       Json? // flexible bag for fiber/sugar/sodium/vitamins/minerals from OFF
+  createdByUserId String?
+  createdAt       DateTime @default(now())
+
+  createdBy   User?       @relation("FoodCreatedBy", fields: [createdByUserId], references: [id])
+  mealEntries MealEntry[]
+
+  @@index([externalId])
+  @@index([createdByUserId])
+}
+
+model MealEntry {
+  id       String   @id @default(cuid())
+  userId   String
+  foodId   String
+  date     DateTime // day this entry belongs to (local-day convention, stored at local midnight UTC)
+  mealType String // "breakfast" | "lunch" | "dinner" | "snack"
+  quantity Float
+  unit     String // "g" | "ml" | "serving" | "piece"
+
+  // Snapshot of computed macros at logging time, so later edits to Food
+  // don't silently rewrite historical diary entries.
+  calories Float
+  protein  Float
+  carbs    Float
+  fat      Float
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  food Food @relation(fields: [foodId], references: [id])
+
+  @@index([userId, date])
+}

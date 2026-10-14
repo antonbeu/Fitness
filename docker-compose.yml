@@ -1,0 +1,52 @@
+# Start: docker compose --env-file deploy.env --profile caddy up -d --build
+# (Profil "caddy" nur weglassen, wenn auf dem Server schon ein eigener Reverse-Proxy mit HTTPS läuft.)
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fitness
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?in deploy.env setzen}
+      POSTGRES_DB: fitness
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fitness -d fitness"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://fitness:${POSTGRES_PASSWORD}@db:5432/fitness
+      AUTH_SECRET: ${AUTH_SECRET:?in deploy.env setzen}
+      AUTH_URL: ${AUTH_URL:?in deploy.env setzen}
+    # Nur lokal erreichbar; von außen kommt man über Caddy (oder den eigenen Reverse-Proxy).
+    ports:
+      - "127.0.0.1:3000:3000"
+
+  caddy:
+    image: caddy:2
+    profiles: ["caddy"]
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      DOMAIN: ${DOMAIN:-}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  dbdata:
+  caddy_data:
+  caddy_config:

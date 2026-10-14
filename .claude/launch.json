@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "fitness-app",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-lc", "npm run dev"],
+      "port": 3000
+    }
+  ]
+}

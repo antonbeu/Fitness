@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.env*
+deploy.env
+.agents
+.windsurf
+.claude
+lib/generated
+public/sw.js
+public/sw.js.map
+public/swe-worker-*
+*.md
+!README.md

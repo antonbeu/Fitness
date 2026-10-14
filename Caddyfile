@@ -1,0 +1,4 @@
+# Holt automatisch ein HTTPS-Zertifikat für die Domain aus deploy.env (DOMAIN=training.example.de).
+{$DOMAIN} {
+	reverse_proxy app:3000
+}

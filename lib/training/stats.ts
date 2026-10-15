@@ -106,3 +106,73 @@ export async function getLastPerformance(
   }
   return result;
 }
+
+export type ExerciseOverview = {
+  exerciseId: string;
+  name: string;
+  /** weight = kg, time = Sekunden, reps = Wiederholungen (Übungen ohne Gewicht) */
+  metric: "weight" | "time" | "reps";
+  unit: string;
+  points: { date: string; value: number }[];
+  first: number;
+  last: number;
+  best: number;
+  sessions: number;
+  lastDate: string;
+};
+
+/** Eine Zeile je trainierter Übung mit Verlauf, für die Statistik-Übersicht. */
+export async function getStatsOverview(userId: string) {
+  const rows = await db.sessionExercise.findMany({
+    where: { session: { userId }, sets: { some: {} } },
+    include: {
+      exercise: { select: { id: true, name: true } },
+      session: { select: { startedAt: true } },
+      sets: true,
+    },
+    orderBy: { session: { startedAt: "asc" } },
+  });
+
+  const byExercise = new Map<string, typeof rows>();
+  for (const row of rows) {
+    const list = byExercise.get(row.exerciseId) ?? [];
+    list.push(row);
+    byExercise.set(row.exerciseId, list);
+  }
+
+  const overview: ExerciseOverview[] = [];
+  for (const [exerciseId, list] of byExercise) {
+    const allSets = list.flatMap((row) => row.sets);
+    const timed = allSets.some((set) => set.unit === "s");
+    const hasWeight = allSets.some((set) => (set.weight ?? 0) > 0);
+    const metric = timed ? "time" : hasWeight ? "weight" : "reps";
+    const unit =
+      metric === "time"
+        ? "min"
+        : metric === "reps"
+          ? "Wdh."
+          : (list.at(-1)!.sets.find((set) => (set.weight ?? 0) > 0)?.unit ?? "kg");
+
+    const points = list.map((row) => ({
+      date: row.session.startedAt.toISOString(),
+      value: Math.max(
+        0,
+        ...row.sets.map((set) => (metric === "weight" ? (set.weight ?? 0) : (set.reps ?? 0))),
+      ),
+    }));
+    const values = points.map((point) => point.value);
+    overview.push({
+      exerciseId,
+      name: list[0].exercise.name,
+      metric,
+      unit,
+      points,
+      first: values[0],
+      last: values.at(-1)!,
+      best: Math.max(...values),
+      sessions: list.length,
+      lastDate: points.at(-1)!.date,
+    });
+  }
+  return { overview, sessionCount: new Set(rows.map((row) => row.workoutSessionId)).size, setCount: rows.reduce((sum, row) => sum + row.sets.length, 0), firstDate: rows[0]?.session.startedAt.toISOString() ?? null };
+}

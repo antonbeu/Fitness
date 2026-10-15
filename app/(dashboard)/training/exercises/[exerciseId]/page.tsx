@@ -9,10 +9,20 @@ import { Page } from "@/components/Page";
 import { MuscleMap } from "@/components/training/MuscleMap";
 import { ProgressChart } from "@/components/training/ProgressChart";
 
-function Stat({ label, value, unit }: { label: string; value: string; unit?: string }) {
+function Stat({
+  label,
+  value,
+  unit,
+  tone = "bg-tile-sage",
+}: {
+  label: string;
+  value: string;
+  unit?: string;
+  tone?: string;
+}) {
   return (
-    <div className="rounded-xl border bg-card px-4 py-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
+    <div className={`rounded-3xl px-4 py-4 ${tone}`}>
+      <p className="text-xs text-foreground/70">{label}</p>
       <p className="text-2xl font-bold tracking-tight tabular-nums">
         {value}
         {unit && <span className="ml-1 text-sm font-medium text-muted-foreground">{unit}</span>}
@@ -89,7 +99,7 @@ export default async function ExerciseDetailPage({
       </div>
 
       {history.length === 0 ? (
-        <div className="rounded-2xl border border-dashed bg-card px-4 py-10 text-center">
+        <div className="rounded-3xl border border-dashed bg-card px-4 py-10 text-center">
           <p className="font-medium">Noch keine Daten</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Sobald du diese Übung trainierst, siehst du hier deinen Verlauf.
@@ -101,23 +111,23 @@ export default async function ExerciseDetailPage({
             {timed ? (
               <>
                 <Stat label="Bestzeit" value={formatDuration(best)} unit="min" />
-                <Stat label="Trainings" value={String(history.length)} />
+                <Stat tone="bg-tile-sand" label="Trainings" value={String(history.length)} />
               </>
             ) : (
               <>
                 <Stat label="Bestes Gewicht" value={formatNumber(best)} unit={unit} />
                 {unit === "kg" ? (
-                  <Stat label="Geschätztes Maximum" value={formatNumber(Math.round(best1rm * 10) / 10)} unit="kg" />
+                  <Stat tone="bg-tile-sand" label="Geschätztes Maximum" value={formatNumber(Math.round(best1rm * 10) / 10)} unit="kg" />
                 ) : (
-                  <Stat label="Trainings" value={String(history.length)} />
+                  <Stat tone="bg-tile-clay" label="Trainings" value={String(history.length)} />
                 )}
-                {unit === "kg" && <Stat label="Trainings" value={String(history.length)} />}
-                <Stat label="Gesamtvolumen" value={formatNumber(Math.round(totalVolume))} unit={unit} />
+                {unit === "kg" && <Stat tone="bg-tile-clay" label="Trainings" value={String(history.length)} />}
+                <Stat tone="bg-card" label="Gesamtvolumen" value={formatNumber(Math.round(totalVolume))} unit={unit} />
               </>
             )}
           </div>
 
-          <section className="rounded-2xl border bg-card p-4">
+          <section className="rounded-3xl border bg-card p-4">
             <h2 className="mb-3 font-semibold">Entwicklung</h2>
             <ProgressChart
               timed={timed}
@@ -133,7 +143,7 @@ export default async function ExerciseDetailPage({
 
           <section>
             <h2 className="mb-2 font-semibold">Alle Trainings</h2>
-            <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
+            <ul className="divide-y overflow-hidden rounded-3xl border bg-card">
               {reversed.map((entry) => (
                 <li key={entry.sessionId}>
                   <Link

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Play, Plus } from "lucide-react";
 import { auth, signOut } from "@/auth";
 import { db } from "@/lib/db";
 import { computeCoverage } from "@/lib/training/coverage";
@@ -36,12 +36,21 @@ export default async function HomePage() {
     lastSessions.map((entry) => [entry.workoutId, entry._max.startedAt]),
   );
 
+  const firstName = session!.user.name?.split(" ")[0];
+  // Kachelfarben reihum: Salbei, Sand, Ton
+  const tones = ["bg-tile-sage", "bg-tile-sand", "bg-tile-clay"];
+
   return (
     <Page>
-      <h1 className="text-3xl font-bold tracking-tight">Training</h1>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {firstName ? `Hallo, ${firstName}` : "Training"}
+        </h1>
+        <p className="text-muted-foreground">Welches Workout steht heute an?</p>
+      </div>
 
       {workouts.length === 0 ? (
-        <div className="rounded-2xl border border-dashed bg-card px-4 py-10 text-center">
+        <div className="rounded-3xl border border-dashed bg-card px-4 py-10 text-center">
           <p className="font-medium">Noch kein Workout angelegt</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Stelle dir aus dem Übungskatalog dein erstes Workout zusammen.
@@ -49,7 +58,7 @@ export default async function HomePage() {
         </div>
       ) : (
         <ul className="flex flex-col gap-3">
-          {workouts.map((workout) => {
+          {workouts.map((workout, index) => {
             const coverage = computeCoverage(
               workout.exercises.map((item) => ({
                 sets: item.targetSets ?? 3,
@@ -66,31 +75,33 @@ export default async function HomePage() {
             return (
               <li
                 key={workout.id}
-                className="rounded-2xl border bg-card p-4"
+                className={`rounded-[1.75rem] p-5 ${tones[index % tones.length]}`}
               >
-                <h2 className="text-lg font-semibold">{workout.name}</h2>
-                <p className="mt-0.5 text-sm text-muted-foreground">
+                <h2 className="text-xl font-bold tracking-tight">{workout.name}</h2>
+                <p className="mt-0.5 text-sm text-foreground/70">
                   {workout.exercises.length}{" "}
                   {workout.exercises.length === 1 ? "Übung" : "Übungen"}
                   {trained.length > 0 && ` · ${trained.join(", ")}`}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-foreground/70">
                   {last ? `Zuletzt ${relativeDays(last)}` : "Noch nicht trainiert"}
                 </p>
                 <div className="mt-4 flex gap-2">
                   <Button
                     size="lg"
+                    variant="ink"
                     className="flex-1"
                     nativeButton={false}
                     render={
                       <Link href={`/training/sessions/new?workoutId=${workout.id}`} />
                     }
                   >
-                    Starten
+                    <Play className="fill-current" /> Starten
                   </Button>
                   <Button
                     size="lg"
                     variant="outline"
+                    className="bg-card/70"
                     nativeButton={false}
                     render={<Link href={`/training/workouts/${workout.id}`} />}
                   >
@@ -107,7 +118,7 @@ export default async function HomePage() {
         <Button
           size="lg"
           variant="outline"
-          className="h-14 justify-start bg-card"
+          className="h-14 justify-start rounded-[1.75rem] bg-card"
           nativeButton={false}
           render={<Link href="/training/workouts/new" />}
         >

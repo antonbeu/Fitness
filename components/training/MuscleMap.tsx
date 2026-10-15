@@ -20,8 +20,8 @@ type MuscleMapProps = {
   className?: string;
 };
 
-const SILHOUETTE = "oklch(0.91 0.006 90)";
-const MUSCLE = "oklch(0.8 0.012 250)";
+const SILHOUETTE = "oklch(0.9 0.03 88)";
+const MUSCLE = "oklch(0.8 0.05 140)";
 
 function fillFor(
   slug: string,
@@ -36,7 +36,7 @@ function fillFor(
     const pct = Math.round(35 + Math.min(level, 1) * 65);
     return `color-mix(in oklch, var(--primary) ${pct}%, ${MUSCLE})`;
   }
-  if (hovered) return "color-mix(in oklch, var(--primary) 45%, oklch(0.8 0.012 250))";
+  if (hovered) return "color-mix(in oklch, var(--primary) 45%, oklch(0.8 0.05 140))";
   return MUSCLE;
 }
 

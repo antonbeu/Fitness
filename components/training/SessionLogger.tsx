@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { ChevronLeft, ChartLine, Trash2, X } from "lucide-react";
+import { ExerciseIcon } from "@/components/training/ExerciseIcon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -204,8 +205,9 @@ function ExerciseCard({
       : null;
 
   return (
-    <section className="rounded-2xl border bg-card p-4">
-      <div className="flex items-start gap-2">
+    <section className="rounded-3xl border bg-card p-4">
+      <div className="flex items-start gap-3">
+        <ExerciseIcon name={sessionExercise.exerciseName} />
         <div className="min-w-0 flex-1">
           <h2 className="text-lg font-semibold">{sessionExercise.exerciseName}</h2>
           {targetText && (

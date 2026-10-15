@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { getBuilderExercises } from "@/lib/training/builder-exercises";
 import { WorkoutBuilder } from "@/components/training/WorkoutBuilder";
 
@@ -5,6 +6,7 @@ import { WorkoutBuilder } from "@/components/training/WorkoutBuilder";
 export const dynamic = "force-dynamic";
 
 export default async function NewWorkoutPage() {
-  const exercises = await getBuilderExercises();
+  const session = await auth();
+  const exercises = await getBuilderExercises(session!.user.id);
   return <WorkoutBuilder exercises={exercises} />;
 }

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Dumbbell, History, Library } from "lucide-react";
+import { ChartLine, Dumbbell, History, Library } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { href: "/", label: "Training", icon: Dumbbell },
   { href: "/training/exercises", label: "Übungen", icon: Library },
+  { href: "/statistik", label: "Statistik", icon: ChartLine },
   { href: "/training", label: "Verlauf", icon: History },
 ];
 
@@ -30,8 +31,8 @@ export function TabBar() {
   if (pathname.startsWith("/training/workouts/")) return null;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-      <ul className="mx-auto flex max-w-2xl">
+    <nav className="fixed inset-x-0 bottom-0 z-40 rounded-t-[2rem] border-t bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-12px_rgb(60_45_20/0.18)] backdrop-blur">
+      <ul className="mx-auto flex max-w-2xl px-2 pt-2">
         {tabs.map(({ href, label, icon: Icon }) => {
           const active = isActive(pathname, href);
           return (
@@ -40,11 +41,18 @@ export function TabBar() {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex flex-col items-center gap-1 py-2.5 text-xs font-medium transition-colors",
+                  "flex flex-col items-center gap-0.5 pb-2 text-xs font-medium transition-colors",
                   active ? "text-primary" : "text-muted-foreground",
                 )}
               >
-                <Icon className="size-6" strokeWidth={active ? 2.25 : 1.75} />
+                <span
+                  className={cn(
+                    "flex h-8 w-14 items-center justify-center rounded-full transition-colors",
+                    active && "bg-tile-sage",
+                  )}
+                >
+                  <Icon className="size-6" strokeWidth={active ? 2.25 : 1.75} />
+                </span>
                 {label}
               </Link>
             </li>

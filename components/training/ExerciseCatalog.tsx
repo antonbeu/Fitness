@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { ChevronRight, Star } from "lucide-react";
+import { ExerciseIcon } from "@/components/training/ExerciseIcon";
 import { MuscleMap } from "@/components/training/MuscleMap";
 import { Input } from "@/components/ui/input";
 import { toggleFavorite } from "@/app/(dashboard)/training/exercises/actions";
@@ -62,11 +63,11 @@ export function ExerciseCatalog({
 
   return (
     <div className="flex flex-col gap-5">
-      <section className="flex flex-col items-center gap-3 rounded-2xl border bg-card px-4 pt-3 pb-4">
+      <section className="flex flex-col items-center gap-3 rounded-3xl border bg-card px-4 pt-3 pb-4">
         <div
           role="tablist"
           aria-label="Ansicht"
-          className="flex w-full max-w-xs rounded-lg bg-secondary p-0.5 text-sm font-medium"
+          className="flex w-full max-w-xs rounded-full bg-secondary p-1 text-sm font-medium"
         >
           {(["front", "back"] as const).map((value) => (
             <button
@@ -76,7 +77,7 @@ export function ExerciseCatalog({
               aria-selected={view === value}
               onClick={() => setView(value)}
               className={cn(
-                "h-9 flex-1 rounded-md transition-colors",
+                "h-9 flex-1 rounded-full transition-colors",
                 view === value
                   ? "bg-card shadow-sm"
                   : "text-muted-foreground",
@@ -113,7 +114,7 @@ export function ExerciseCatalog({
           aria-pressed={onlyFavorites}
           onClick={() => setOnlyFavorites((current) => !current)}
           className={cn(
-            "flex h-10 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors",
+            "flex h-10 items-center gap-1.5 rounded-full border px-4 text-sm font-medium transition-colors",
             onlyFavorites
               ? "border-primary bg-primary text-primary-foreground"
               : "bg-card",
@@ -137,7 +138,7 @@ export function ExerciseCatalog({
         </button>
       )}
 
-      <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
+      <ul className="divide-y overflow-hidden rounded-3xl border bg-card">
         {filtered.length === 0 && (
           <li className="px-4 py-6 text-center text-sm text-muted-foreground">
             Keine Übungen gefunden.
@@ -156,12 +157,13 @@ export function ExerciseCatalog({
                 className="flex min-w-0 flex-1 items-center gap-3 py-3 pl-4 active:bg-muted"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{exercise.name}</p>
+                  <p className="line-clamp-2 leading-tight font-medium">{exercise.name}</p>
                   <p className="truncate text-sm text-muted-foreground">
                     {primary}
                     {exercise.best ? ` · Bestwert ${formatNumber(exercise.best)} kg` : ""}
                   </p>
                 </div>
+                <ExerciseIcon name={exercise.name} />
                 <ChevronRight className="size-5 shrink-0 text-muted-foreground/60" />
               </Link>
               <button

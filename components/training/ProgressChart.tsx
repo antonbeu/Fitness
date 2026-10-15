@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
+import { areaPath, smoothPath } from "@/lib/smooth-path";
 import { cn } from "@/lib/utils";
 import { formatDate, formatDuration, formatNumber } from "@/lib/format";
 
@@ -86,9 +87,10 @@ export function ProgressChart({
     return { ticks, coords, y, tMin, tMax };
   }, [points, metricKey]);
 
+  const gradientId = useId();
   const activeIndex = selected ?? points.length - 1;
   const active = chart.coords[activeIndex];
-  const line = chart.coords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(" ");
+  const coordPairs = chart.coords.map((c) => [c.x, c.y] as [number, number]);
 
   // Jeweils ersten und letzten Termin beschriften; bei vielen Punkten reicht das.
   const xLabels =
@@ -104,7 +106,7 @@ export function ProgressChart({
       <div
         role="tablist"
         aria-label="Kennzahl"
-        className="flex rounded-lg bg-secondary p-0.5 text-sm font-medium"
+        className="flex rounded-full bg-secondary p-1 text-sm font-medium"
       >
         {METRICS.map((m) => (
           <button
@@ -114,7 +116,7 @@ export function ProgressChart({
             aria-selected={metricKey === m.key}
             onClick={() => setMetricKey(m.key)}
             className={cn(
-              "h-9 flex-1 rounded-md px-1 transition-colors",
+              "h-9 flex-1 rounded-full px-1 transition-colors",
               metricKey === m.key ? "bg-card shadow-sm" : "text-muted-foreground",
             )}
           >
@@ -168,15 +170,24 @@ export function ProgressChart({
           </text>
         ))}
 
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.28} />
+            <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+          </linearGradient>
+        </defs>
         {points.length > 1 && (
-          <polyline
-            points={line}
-            fill="none"
-            stroke="var(--primary)"
-            strokeWidth={2.5}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
+          <>
+            <path d={areaPath(coordPairs, H - PAD.bottom)} fill={`url(#${gradientId})`} />
+            <path
+              d={smoothPath(coordPairs)}
+              fill="none"
+              stroke="var(--primary)"
+              strokeWidth={3}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </>
         )}
         {chart.coords.map((c, index) => (
           <g key={index} onClick={() => setSelected(index)} className="cursor-pointer">

@@ -24,7 +24,7 @@ export default async function TrainingPage() {
           Noch keine Trainings aufgezeichnet.
         </p>
       ) : (
-        <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
+        <ul className="divide-y overflow-hidden rounded-3xl border bg-card">
           {sessions.map((workoutSession) => {
             const setCount = workoutSession.exercises.reduce(
               (total, exercise) => total + exercise.sets.length,

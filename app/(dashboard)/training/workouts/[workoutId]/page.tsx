@@ -21,7 +21,7 @@ export default async function EditWorkoutPage({
       where: { id: workoutId, userId: session!.user.id },
       include: { exercises: { orderBy: { order: "asc" } } },
     }),
-    getBuilderExercises(),
+    getBuilderExercises(session!.user.id),
   ]);
 
   if (!workout) {

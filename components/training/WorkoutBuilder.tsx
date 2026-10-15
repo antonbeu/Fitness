@@ -33,10 +33,12 @@ import {
   Dumbbell,
   GripVertical,
   Plus,
+  Star,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ExerciseIcon } from "@/components/training/ExerciseIcon";
 import { MuscleMap } from "@/components/training/MuscleMap";
 import {
   AREAS,
@@ -107,6 +109,7 @@ export function WorkoutBuilder({
   );
   const [query, setQuery] = useState("");
   const [areaFilter, setAreaFilter] = useState<AreaKey | null>(null);
+  const [catalogView, setCatalogView] = useState<"all" | "mine">("all");
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -134,18 +137,30 @@ export function WorkoutBuilder({
     [rows, exerciseById],
   );
 
-  const visibleExercises = useMemo(
-    () =>
-      exercises.filter((exercise) => {
-        const matchesQuery =
-          query.trim() === "" ||
-          exercise.name.toLowerCase().includes(query.trim().toLowerCase());
-        const matchesArea =
-          !areaFilter || exerciseAreaKeys(exercise.muscles).includes(areaFilter);
-        return matchesQuery && matchesArea;
-      }),
-    [exercises, query, areaFilter],
-  );
+  // „Meine Übungen“: Favoriten und oft trainierte Übungen, die häufigsten zuerst.
+  const isMine = (exercise: BuilderExercise) => exercise.favorite || exercise.uses >= 2;
+  const mineCount = useMemo(() => exercises.filter(isMine).length, [exercises]);
+
+  const visibleExercises = useMemo(() => {
+    const filtered = exercises.filter((exercise) => {
+      const matchesQuery =
+        query.trim() === "" ||
+        exercise.name.toLowerCase().includes(query.trim().toLowerCase());
+      const matchesArea =
+        !areaFilter || exerciseAreaKeys(exercise.muscles).includes(areaFilter);
+      const matchesView = catalogView === "all" || isMine(exercise);
+      return matchesQuery && matchesArea && matchesView;
+    });
+    if (catalogView === "mine") {
+      filtered.sort(
+        (a, b) =>
+          Number(b.favorite) - Number(a.favorite) ||
+          b.uses - a.uses ||
+          a.name.localeCompare(b.name, "de"),
+      );
+    }
+    return filtered;
+  }, [exercises, query, areaFilter, catalogView]);
 
   const countByExercise = useMemo(() => {
     const counts = new Map<string, number>();
@@ -293,7 +308,7 @@ export function WorkoutBuilder({
         <div
           role="tablist"
           aria-label="Bereich"
-          className="flex rounded-lg bg-secondary p-0.5 text-sm font-medium lg:hidden"
+          className="flex rounded-full bg-secondary p-1 text-sm font-medium lg:hidden"
         >
           {(
             [
@@ -308,7 +323,7 @@ export function WorkoutBuilder({
               aria-selected={tab === value}
               onClick={() => setTab(value)}
               className={cn(
-                "h-9 flex-1 rounded-md transition-colors",
+                "h-9 flex-1 rounded-full transition-colors",
                 tab === value ? "bg-card shadow-sm" : "text-muted-foreground",
               )}
             >
@@ -324,6 +339,32 @@ export function WorkoutBuilder({
             className={cn("flex flex-col gap-3", tab === "catalog" ? "flex" : "hidden", "lg:flex")}
           >
             <h2 className="hidden text-lg font-semibold lg:block">Übungen</h2>
+            <div
+              role="tablist"
+              aria-label="Auswahl"
+              className="flex rounded-full bg-secondary p-1 text-sm font-medium"
+            >
+              {(
+                [
+                  ["all", "Alle Übungen"],
+                  ["mine", `Meine Übungen (${mineCount})`],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="tab"
+                  aria-selected={catalogView === value}
+                  onClick={() => setCatalogView(value)}
+                  className={cn(
+                    "h-9 flex-1 rounded-full transition-colors",
+                    catalogView === value ? "bg-card shadow-sm" : "text-muted-foreground",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <Input
               placeholder="Übung suchen"
               value={query}
@@ -354,10 +395,12 @@ export function WorkoutBuilder({
               Tippe auf + oder halte eine Übung gedrückt und ziehe sie nach unten
               in „Mein Workout“.
             </p>
-            <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
+            <ul className="divide-y overflow-hidden rounded-3xl border bg-card">
               {visibleExercises.length === 0 && (
                 <li className="px-4 py-6 text-center text-sm text-muted-foreground">
-                  Keine Übungen gefunden.
+                  {catalogView === "mine" && !query && !areaFilter
+                    ? "Noch keine Favoriten oder oft trainierten Übungen. Favoriten markierst du im Tab „Übungen“ mit dem Stern."
+                    : "Keine Übungen gefunden."}
                 </li>
               )}
               {visibleExercises.map((exercise) => (
@@ -434,7 +477,7 @@ export function WorkoutBuilder({
 
       <DragOverlay dropAnimation={null}>
         {draggingExercise && (
-          <div className="rounded-xl border bg-card px-4 py-3 text-sm font-medium shadow-lg">
+          <div className="rounded-2xl border bg-card px-4 py-3 text-sm font-medium shadow-lg">
             {draggingExercise.name}
           </div>
         )}
@@ -472,8 +515,16 @@ function CatalogRow({
       >
         <GripVertical className="size-5 shrink-0 text-muted-foreground/50" />
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium">{exercise.name}</p>
-          <p className="truncate text-sm text-muted-foreground">{primary}</p>
+          <p className="line-clamp-2 leading-tight font-medium">
+            {exercise.favorite && (
+              <Star className="mr-1 -mt-0.5 inline size-3.5 fill-amber-400 text-amber-400" />
+            )}
+            {exercise.name}
+          </p>
+          <p className="truncate text-sm text-muted-foreground">
+            {primary}
+            {exercise.uses > 0 && ` · ${exercise.uses}× trainiert`}
+          </p>
         </div>
         {count > 0 && (
           <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-primary">
@@ -481,6 +532,7 @@ function CatalogRow({
             {count > 1 ? `${count}×` : "dabei"}
           </span>
         )}
+        <ExerciseIcon name={exercise.name} className="mr-1" />
       </div>
       <button
         type="button"
@@ -510,7 +562,7 @@ function BasketPanel({
     <div
       ref={setNodeRef}
       className={cn(
-        "rounded-2xl border bg-card p-3 transition-colors",
+        "rounded-3xl border bg-card p-3 transition-colors",
         isDragging && "border-dashed border-primary/60",
         isOver && "bg-primary/5 ring-2 ring-primary/40",
       )}
@@ -587,6 +639,7 @@ function BasketRow({
         >
           <GripVertical className="size-5" />
         </button>
+        <ExerciseIcon name={exercise.name} size="sm" />
         <p className="min-w-0 flex-1 truncate font-medium">
           <span className="mr-2 text-muted-foreground tabular-nums">{index + 1}.</span>
           {exercise.name}
@@ -656,7 +709,7 @@ function CoveragePanel({
   onPickArea: (key: AreaKey) => void;
 }) {
   return (
-    <section aria-label="Analyse" className="rounded-2xl border bg-card p-4">
+    <section aria-label="Analyse" className="rounded-3xl border bg-card p-4">
       <h3 className="font-semibold">Analyse</h3>
       <p className="mt-1 text-sm text-muted-foreground" aria-live="polite">
         {coverage.summary}
@@ -671,7 +724,7 @@ function CoveragePanel({
         {coverage.areas.map((area) => (
           <li key={area.key}>
             {area.status === "trained" ? (
-              <div className="flex h-10 items-center gap-2 rounded-lg bg-primary/10 px-3 text-sm font-medium text-primary">
+              <div className="flex h-10 items-center gap-2 rounded-full bg-primary/10 px-3 text-sm font-medium text-primary">
                 <Check className="size-4" />
                 <span className="flex-1">{area.label}</span>
                 <span className="text-xs tabular-nums opacity-70">{area.sets} Sätze</span>
@@ -680,7 +733,7 @@ function CoveragePanel({
               <button
                 type="button"
                 onClick={() => onPickArea(area.key)}
-                className="flex h-10 w-full items-center gap-2 rounded-lg bg-secondary px-3 text-left text-sm text-muted-foreground"
+                className="flex h-10 w-full items-center gap-2 rounded-full bg-secondary px-3 text-left text-sm text-muted-foreground"
               >
                 <Plus className="size-4" />
                 <span className="flex-1">{area.label}</span>

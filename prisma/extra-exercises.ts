@@ -17,7 +17,7 @@ export const extraExercises: ExtraExercise[] = [
   { id: "custom-rhomboid", name: "Rhomboiden-Maschine", equipment: "Maschine", primary: ["middle-back"], secondary: ["lats", "shoulders", "traps"] },
   { id: "custom-abductor", name: "Abduktoren-Maschine", equipment: "Maschine", primary: ["abductors"], secondary: ["glutes"] },
   { id: "custom-adductor", name: "Adduktoren-Maschine", equipment: "Maschine", primary: ["adductors"] },
-  { id: "custom-core-rotation", name: "Rumpfrotation (Maschine)", equipment: "Maschine", primary: ["abs"] },
+  { id: "custom-core-rotation", name: "Rumpfrotation (Kabelzug)", equipment: "Kabelzug", primary: ["abs"] },
   { id: "custom-step-down", name: "Step-Downs", equipment: "Körpergewicht", primary: ["quads"], secondary: ["glutes"] },
   { id: "custom-side-plank", name: "Seitlicher Unterarmstütz", equipment: "Körpergewicht", category: "Zeit", primary: ["abs"] },
   { id: "custom-shoulder-press-machine", name: "Schulterpresse (Maschine)", equipment: "Maschine", primary: ["shoulders"], secondary: ["triceps"] },

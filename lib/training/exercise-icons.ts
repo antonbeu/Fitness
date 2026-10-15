@@ -78,7 +78,7 @@ export const kindByName: Record<string, IconKind> = {
   "Seitlicher Unterarmstütz": "sideplank",
   Crunches: "crunch",
   "Beinheben (Leg Raises)": "legraise",
-  "Rumpfrotation (Maschine)": "twist",
+  "Rumpfrotation (Kabelzug)": "twist",
   "Abduktoren-Maschine": "abductor",
   "Adduktoren-Maschine": "adductor",
   "Schulterheben (Schultergürtel)": "shrug",

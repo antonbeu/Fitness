@@ -472,15 +472,11 @@ function Pose({ kind }: { kind: IconKind }) {
     case "twist":
       return (
         <g>
-          <Pad x={14} y={43} w={26} h={5} />
-          <Bar from={[26, 48]} to={[26, 58]} w={3} c={EQ} />
-          <Limb far pts={[[24, 38], [40, 38], [41, 54]]} />
-          <Torso pts={[[26, 18], [26, 38]]} />
-          <Limb pts={[[24, 38], [40, 38], [40, 54]]} />
-          <Limb pts={[[26, 22], [36, 25]]} w={6} />
-          <Head at={[26, 9]} />
-          <path d="M46 18 A14 14 0 0 1 46 42" fill="none" stroke={EQD} strokeWidth={2.5} strokeLinecap="round" />
-          <polygon points="46,46 41,40 50,40" fill={EQD} />
+          <Bar from={[58, 2]} to={[58, 58]} w={3} c={EQ} />
+          <Bar from={[58, 24]} to={[40, 25]} w={1.5} />
+          <Standing arms={[[30, 21], [36, 25], [40, 25]]} />
+          <path d="M14 14 A14 14 0 0 0 14 38" fill="none" stroke={EQD} strokeWidth={2.5} strokeLinecap="round" />
+          <polygon points="14,42 9,36 18,36" fill={EQD} />
         </g>
       );
     case "abductor":

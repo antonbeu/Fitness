@@ -36,7 +36,7 @@ const LEG_EXT = "Beinstrecker";
 const CALF = "Wadenheben (stehend)";
 const RDL = "Rumänisches Kreuzheben";
 const ROW = "Rudern am Kabelzug (sitzend)";
-const CORE = "Rumpfrotation (Maschine)";
+const CORE = "Rumpfrotation (Kabelzug)";
 
 export const history: HistorySession[] = [
   {

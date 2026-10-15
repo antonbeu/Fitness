@@ -19,7 +19,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        const user = await db.user.findUnique({ where: { email } });
+        // Groß-/Kleinschreibung egal, damit „Lars66“ auch als „lars66“ klappt (Handy schreibt oft groß).
+        const user = await db.user.findFirst({
+          where: { email: { equals: email.trim(), mode: "insensitive" } },
+        });
         if (!user) {
           return null;
         }

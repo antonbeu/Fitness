@@ -15,7 +15,7 @@ export async function loginAction(
     });
   } catch (error) {
     if (error instanceof AuthError) {
-      return "E-Mail oder Passwort ist falsch.";
+      return "Benutzername oder Passwort ist falsch.";
     }
     throw error;
   }

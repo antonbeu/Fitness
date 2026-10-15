@@ -6,7 +6,7 @@ async function main() {
   const [email, password, name] = process.argv.slice(2);
 
   if (!email || !password) {
-    console.error("Usage: npx tsx prisma/create-user.ts <email> <password> [name]");
+    console.error("Usage: npx tsx prisma/create-user.ts <benutzername-oder-email> <password> [name]");
     process.exit(1);
   }
 

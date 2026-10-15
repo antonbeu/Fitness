@@ -29,12 +29,15 @@ export default function LoginPage() {
         <CardContent>
           <form action={formAction} className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="email">E-Mail</Label>
+              <Label htmlFor="email">Benutzername oder E-Mail</Label>
               <Input
                 id="email"
                 name="email"
-                type="email"
-                autoComplete="email"
+                type="text"
+                autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 required
               />
             </div>

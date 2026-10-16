@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { Page } from "@/components/Page";
+import { DeleteSessionIcon } from "@/components/training/DeleteSessionButton";
 
 export default async function TrainingPage() {
   const session = await auth();
@@ -31,10 +32,10 @@ export default async function TrainingPage() {
               0,
             );
             return (
-              <li key={workoutSession.id}>
+              <li key={workoutSession.id} className="flex items-center">
                 <Link
                   href={`/training/sessions/${workoutSession.id}`}
-                  className="flex items-center gap-3 px-4 py-3 active:bg-muted"
+                  className="flex min-w-0 flex-1 items-center gap-3 py-3 pl-4 active:bg-muted"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">
@@ -58,6 +59,10 @@ export default async function TrainingPage() {
                   </div>
                   <ChevronRight className="size-5 shrink-0 text-muted-foreground/60" />
                 </Link>
+                <DeleteSessionIcon
+                  sessionId={workoutSession.id}
+                  label={workoutSession.workout?.name ?? "Freies Training"}
+                />
               </li>
             );
           })}

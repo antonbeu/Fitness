@@ -63,3 +63,39 @@ export function relativeDays(iso: string | Date) {
   if (diff === 1) return "gestern";
   return `vor ${diff} Tagen`;
 }
+
+/** Versatz von Europe/Berlin zu UTC in Minuten (Sommerzeit berücksichtigt). */
+function berlinOffsetMinutes(date: Date) {
+  const text = new Intl.DateTimeFormat("en-US", {
+    timeZone: TZ,
+    timeZoneName: "longOffset",
+  }).format(date);
+  const match = text.match(/GMT([+-])(\d{2}):(\d{2})/);
+  if (!match) return 0;
+  return (match[1] === "-" ? -1 : 1) * (Number(match[2]) * 60 + Number(match[3]));
+}
+
+/** Für <input type="datetime-local">: Berliner Ortszeit als „2026-10-16T18:00“. */
+export function toDateTimeLocal(iso: string | Date) {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  })
+    .format(new Date(iso))
+    .replace(" ", "T");
+}
+
+/** Umkehrung: „2026-10-16T18:00“ als Berliner Ortszeit in einen echten Zeitpunkt. */
+export function fromDateTimeLocal(value: string) {
+  const naive = new Date(`${value}:00Z`);
+  const first = berlinOffsetMinutes(naive);
+  let result = new Date(naive.getTime() - first * 60_000);
+  const second = berlinOffsetMinutes(result);
+  if (second !== first) result = new Date(naive.getTime() - second * 60_000);
+  return result;
+}

@@ -4,6 +4,8 @@ export type BuilderExercise = {
   id: string;
   name: string;
   muscles: { slug: string; name: string; role: "PRIMARY" | "SECONDARY" }[];
+  /** Haltedauer-Übung (z. B. Plank): Ziel in Sekunden statt Wdh./kg */
+  timed: boolean;
   /** Vom Nutzer als Favorit markiert */
   favorite: boolean;
   /** In wie vielen Trainings der Nutzer die Übung schon gemacht hat */
@@ -33,6 +35,7 @@ export async function getBuilderExercises(userId: string): Promise<BuilderExerci
       name: link.muscleGroup.name,
       role: link.role,
     })),
+    timed: exercise.category === "Zeit",
     favorite: favoriteIds.has(exercise.id),
     uses: usesById.get(exercise.id) ?? 0,
   }));

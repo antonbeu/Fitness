@@ -171,11 +171,12 @@ export function WorkoutBuilder({
   }, [rows]);
 
   function addExercise(exerciseId: string, atIndex?: number) {
+    const timed = exerciseById.get(exerciseId)?.timed ?? false;
     const row: Row = {
       key: newRowKey(),
       exerciseId,
       targetSets: 3,
-      targetReps: 10,
+      targetReps: timed ? 60 : 10,
       targetWeight: null,
     };
     setRows((current) => {
@@ -653,11 +654,18 @@ function BasketRow({
           <X className="size-5" />
         </button>
       </div>
-      <div className="mt-2 grid grid-cols-3 gap-2">
-        {numberField("Sätze", row.targetSets, "targetSets")}
-        {numberField("Wdh.", row.targetReps, "targetReps")}
-        {numberField("kg", row.targetWeight, "targetWeight", 0.5)}
-      </div>
+      {exercise.timed ? (
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {numberField("Sätze", row.targetSets, "targetSets")}
+          {numberField("Dauer (Sekunden)", row.targetReps, "targetReps")}
+        </div>
+      ) : (
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          {numberField("Sätze", row.targetSets, "targetSets")}
+          {numberField("Wdh.", row.targetReps, "targetReps")}
+          {numberField("kg", row.targetWeight, "targetWeight", 0.5)}
+        </div>
+      )}
     </li>
   );
 }

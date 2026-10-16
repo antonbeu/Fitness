@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { ChevronLeft, ChartLine, Trash2, X } from "lucide-react";
+import { DeleteSessionButton } from "@/components/training/DeleteSessionButton";
 import { ExerciseIcon } from "@/components/training/ExerciseIcon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,8 +20,16 @@ import {
   finishSession,
   removeSessionExercise,
   removeSetLog,
+  updateSessionDate,
 } from "@/app/(dashboard)/training/sessions/actions";
-import { formatDate, formatDateTime, formatNumber, summarizeSets } from "@/lib/format";
+import {
+  formatDate,
+  formatDateTime,
+  formatDuration,
+  formatNumber,
+  summarizeSets,
+  toDateTimeLocal,
+} from "@/lib/format";
 
 type SetEntry = {
   id: string;
@@ -62,6 +71,9 @@ export function SessionLogger({
 }: SessionLoggerProps) {
   const [isPending, startTransition] = useTransition();
   const [pendingExerciseId, setPendingExerciseId] = useState("");
+  const [editingDate, setEditingDate] = useState(false);
+  const [dateValue, setDateValue] = useState(toDateTimeLocal(startedAt));
+  const [dateError, setDateError] = useState<string | null>(null);
   const finished = Boolean(endedAt);
 
   return (
@@ -80,7 +92,54 @@ export function SessionLogger({
         <p className="text-sm text-muted-foreground">
           {formatDateTime(startedAt)}
           {endedAt && " · abgeschlossen"}
+          {" · "}
+          <button
+            type="button"
+            className="font-medium text-primary"
+            onClick={() => {
+              setDateValue(toDateTimeLocal(startedAt));
+              setEditingDate((current) => !current);
+            }}
+          >
+            Datum ändern
+          </button>
         </p>
+        {editingDate && (
+          <div className="mt-3 flex flex-col gap-2 rounded-3xl border bg-card p-4">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Datum und Uhrzeit des Trainings</span>
+              <Input
+                type="datetime-local"
+                className="h-12"
+                value={dateValue}
+                onChange={(event) => setDateValue(event.target.value)}
+              />
+            </label>
+            {dateError && <p className="text-sm text-destructive">{dateError}</p>}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                disabled={isPending || dateValue === ""}
+                onClick={() => {
+                  setDateError(null);
+                  startTransition(async () => {
+                    try {
+                      await updateSessionDate(sessionId, dateValue);
+                      setEditingDate(false);
+                    } catch (error) {
+                      setDateError(error instanceof Error ? error.message : "Fehler beim Speichern.");
+                    }
+                  });
+                }}
+              >
+                Datum speichern
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setEditingDate(false)}>
+                Abbrechen
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-3">
@@ -147,6 +206,10 @@ export function SessionLogger({
           Training abschließen
         </Button>
       )}
+
+      <div className="mt-2 flex justify-center">
+        <DeleteSessionButton sessionId={sessionId} />
+      </div>
     </>
   );
 }
@@ -179,14 +242,24 @@ function ExerciseCard({
   const [reps, setReps] = useState(
     String(suggestion?.reps ?? sessionExercise.target?.reps ?? ""),
   );
+  // Zeit-Übungen (z. B. Plank): Minuten + Sekunden statt kg × Wdh.
+  const startSeconds = Number(suggestion?.reps ?? sessionExercise.target?.reps ?? 0) || 0;
+  const [minutes, setMinutes] = useState(
+    startSeconds ? String(Math.floor(startSeconds / 60)) : "",
+  );
+  const [seconds, setSeconds] = useState(
+    startSeconds ? String(startSeconds % 60) : "",
+  );
 
   function handleAddSet() {
+    const totalSeconds = Number(minutes || 0) * 60 + Number(seconds || 0);
+    if (timed && totalSeconds <= 0) return;
     startTransition(() =>
       addSetLog(
         sessionId,
         sessionExercise.id,
         timed
-          ? { weight: null, reps: reps === "" ? null : Number(reps), unit: "s" }
+          ? { weight: null, reps: totalSeconds, unit: "s" }
           : {
               weight: weight === "" ? null : Number(weight),
               reps: reps === "" ? null : Number(reps),
@@ -199,9 +272,11 @@ function ExerciseCard({
   const target = sessionExercise.target;
   const targetText =
     target && (target.sets || target.reps || target.weight)
-      ? `Ziel: ${target.sets ?? "–"} × ${target.reps ?? "–"}${
-          target.weight ? ` mit ${formatNumber(target.weight)} kg` : ""
-        }`
+      ? timed
+        ? `Ziel: ${target.sets ?? "–"} × ${target.reps ? formatDuration(target.reps) : "–"}`
+        : `Ziel: ${target.sets ?? "–"} × ${target.reps ?? "–"}${
+            target.weight ? ` mit ${formatNumber(target.weight)} kg` : ""
+          }`
       : null;
 
   return (
@@ -266,33 +341,61 @@ function ExerciseCard({
 
       {!readOnly && (
         <div className="mt-3 flex items-end gap-2">
-          {!timed && (
-          <label className="flex flex-1 flex-col gap-1">
-            <span className="text-xs text-muted-foreground">
-              {weightUnit === "kg" ? "Gewicht (kg)" : "kg pro Seite"}
-            </span>
-            <Input
-              type="number"
-              inputMode="decimal"
-              step={0.5}
-              min={0}
-              className="h-12 text-lg"
-              value={weight}
-              onChange={(event) => setWeight(event.target.value)}
-            />
-          </label>
+          {timed ? (
+            <>
+              <label className="flex flex-1 flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Minuten</span>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  className="h-12 text-lg"
+                  value={minutes}
+                  onChange={(event) => setMinutes(event.target.value)}
+                />
+              </label>
+              <label className="flex flex-1 flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Sekunden</span>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={59}
+                  className="h-12 text-lg"
+                  value={seconds}
+                  onChange={(event) => setSeconds(event.target.value)}
+                />
+              </label>
+            </>
+          ) : (
+            <>
+              <label className="flex flex-1 flex-col gap-1">
+                <span className="text-xs text-muted-foreground">
+                  {weightUnit === "kg" ? "Gewicht (kg)" : "kg pro Seite"}
+                </span>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  step={0.5}
+                  min={0}
+                  className="h-12 text-lg"
+                  value={weight}
+                  onChange={(event) => setWeight(event.target.value)}
+                />
+              </label>
+              <label className="flex flex-1 flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Wiederholungen</span>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  className="h-12 text-lg"
+                  value={reps}
+                  onChange={(event) => setReps(event.target.value)}
+                />
+              </label>
+            </>
           )}
-          <label className="flex flex-1 flex-col gap-1">
-            <span className="text-xs text-muted-foreground">{timed ? "Dauer (Sekunden)" : "Wiederholungen"}</span>
-            <Input
-              type="number"
-              inputMode="numeric"
-              min={0}
-              className="h-12 text-lg"
-              value={reps}
-              onChange={(event) => setReps(event.target.value)}
-            />
-          </label>
           <Button
             type="button"
             size="lg"
